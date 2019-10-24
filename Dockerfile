@@ -12,26 +12,27 @@ RUN apt-get update && \
     apt-get upgrade -y
 
 # install some prerequisites
-RUN apt-get install -y software-properties-common curl build-essential \
+RUN apt-get install -y apt-utils software-properties-common curl build-essential \
     dos2unix gcc git libmcrypt4 libpcre3-dev memcached make python2.7-dev \
     python-pip re2c unattended-upgrades whois vim libnotify-bin nano wget \
     debconf-utils
 
 # add some repositories
 RUN apt-add-repository ppa:nginx/stable -y && \
-    apt-add-repository ppa:rwky/redis -y && \
+    apt-add-repository ppa:chris-lea/redis-server -y && \
     apt-add-repository ppa:ondrej/php -y && \
     apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 5072E1F5 && \
     sh -c 'echo "deb http://repo.mysql.com/apt/ubuntu/ trusty mysql-5.7" >> /etc/apt/sources.list.d/mysql.list' && \
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
     sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" >> /etc/apt/sources.list.d/postgresql.list' && \
     curl -s https://packagecloud.io/gpg.key | apt-key add - && \
+    curl -s https://packages.blackfire.io/gpg.key | apt-key add - && \
     echo "deb http://packages.blackfire.io/debian any main" | tee /etc/apt/sources.list.d/blackfire.list && \
-    curl --silent --location https://deb.nodesource.com/setup_5.x | bash - && \
+    curl --silent --location https://deb.nodesource.com/setup_8.x | bash - && \
     apt-get update
 
 # set the locale
-RUN echo "LC_ALL=en_US.UTF-8" >> /etc/default/locale  && \
+RUN apt-get clean && apt-get update && apt-get install -y locales &&\
     locale-gen en_US.UTF-8  && \
     ln -sf /usr/share/zoneinfo/UTC /etc/localtime
     
@@ -56,7 +57,7 @@ VOLUME ["/var/log/nginx"]
 
 # install php
 RUN apt-get install -y --force-yes php7.2-fpm php7.2-cli php7.2-dev php7.2-pgsql php7.2-sqlite3 php7.2-gd \
-    php-apcu php7.2-curl php7.2-mcrypt php7.2-imap php7.2-mysql php7.2-readline php-xdebug php-common \
+    php-apcu php7.2-curl php7.2-imap php7.2-mysql php7.2-readline php-xdebug php-common \
     php7.2-mbstring php7.2-xml php7.2-zip
 RUN sed -i "s/error_reporting = .*/error_reporting = E_ALL/" /etc/php/7.2/cli/php.ini && \
     sed -i "s/display_errors = .*/display_errors = On/" /etc/php/7.2/cli/php.ini && \
@@ -77,8 +78,7 @@ RUN sed -i "s/error_reporting = .*/error_reporting = E_ALL/" /etc/php/7.2/cli/ph
     sed -i -e "s/;listen.mode = 0660/listen.mode = 0750/g" /etc/php/7.2/fpm/pool.d/www.conf && \
     find /etc/php/7.2/cli/conf.d/ -name "*.ini" -exec sed -i -re 's/^(\s*)#(.*)/\1;\2/g' {} \;
 COPY fastcgi_params /etc/nginx/
-RUN phpenmod mcrypt && \
-    mkdir -p /run/php/ && chown -Rf www-data.www-data /run/php
+RUN mkdir -p /run/php/ && chown -Rf www-data.www-data /run/php
 
 # install sqlite 
 RUN apt-get install -y sqlite3 libsqlite3-dev
