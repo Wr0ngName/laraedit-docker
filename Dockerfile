@@ -87,10 +87,9 @@ RUN apt-get install -y sqlite3 libsqlite3-dev
 RUN echo mysql-server mysql-server/root_password password $DB_PASS | debconf-set-selections;\
     echo mysql-server mysql-server/root_password_again password $DB_PASS | debconf-set-selections;\
     apt-get install -y mysql-server && \
-    echo "default_password_lifetime = 0" >> /etc/mysql/my.cnf && \
-    sed -i '/^bind-address/s/bind-address.*=.*/bind-address = 0.0.0.0/' /etc/mysql/my.cnf
-RUN /usr/sbin/mysqld & \
-    sleep 10s && \
+    printf "\n[mysql]\nsocket = /var/run/mysqld/mysqld.sock\n\n[mysqld]\nsocket = /var/run/mysqld/mysqld.sock\nbind-address = 0.0.0.0\ndefault_password_lifetime = 0" >> /etc/mysql/my.cnf
+RUN mkdir /var/run/mysqld && chown mysql:mysql /var/run/mysqld/ && \
+    /usr/sbin/mysqld & sleep 10s && \
     echo "GRANT ALL ON *.* TO root@'0.0.0.0' IDENTIFIED BY 'secret' WITH GRANT OPTION; CREATE USER 'homestead'@'0.0.0.0' IDENTIFIED BY 'secret'; GRANT ALL ON *.* TO 'homestead'@'0.0.0.0' IDENTIFIED BY 'secret' WITH GRANT OPTION; GRANT ALL ON *.* TO 'homestead'@'%' IDENTIFIED BY 'secret' WITH GRANT OPTION; FLUSH PRIVILEGES; CREATE DATABASE homestead;" | mysql
 VOLUME ["/var/lib/mysql"]
 
