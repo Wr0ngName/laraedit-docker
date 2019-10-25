@@ -150,3 +150,6 @@ EXPOSE 80 443 3306 6379
 # set container entrypoints
 ENTRYPOINT ["/bin/bash","-c"]
 CMD ["/usr/bin/supervisord"]
+
+# init project and permissions setup
+RUN cd /var/www/html && laravel new app && chown www-data:www-data -R app/
