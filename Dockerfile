@@ -1,5 +1,5 @@
 FROM ubuntu:18.04
-MAINTAINER Derek Bourgeois <derek@ibourgeois.com>
+LABEL maintainer="Wr0ngName@users.noreply.github.com"
 
 # set some environment variables
 ENV APP_NAME app
@@ -98,21 +98,16 @@ VOLUME ["/var/lib/mysql"]
 RUN curl -sS https://getcomposer.org/installer | php && \
     mv composer.phar /usr/local/bin/composer && \
     echo "" >> ~/.bashrc && \
-    echo 'export PATH="$HOME/.composer/vendor/bin:$PATH"' >> ~/.bashrc && \
-    chown www-data:www-data -R /var/www
-
-USER www-data
+    echo 'export PATH="$HOME/.composer/vendor/bin:$PATH"' >> ~/.bashrc
     
 # clear cache and install prestissimo
-# RUN composer clear-cache && composer global require "hirak/prestissimo"
+# RUN composer global require "hirak/prestissimo"
 
 # install laravel envoy
-RUN composer global require "laravel/envoy"
+RUN composer clear-cache && composer global require "laravel/envoy"
 
 #install laravel installer
 RUN composer global require "laravel/installer"
-
-USER root
 
 # install nodejs
 RUN apt-get install -y nodejs
@@ -150,6 +145,9 @@ RUN apt-get remove --purge -y software-properties-common && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /usr/share/man/?? && \
     rm -rf /usr/share/man/??_*
+
+# Permissions setup
+RUN chown www-data:www-data -R /var/www/html
 
 # expose ports
 EXPOSE 80 443 3306 6379
