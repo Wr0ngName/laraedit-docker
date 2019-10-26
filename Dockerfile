@@ -56,6 +56,7 @@ VOLUME ["/var/cache/nginx"]
 VOLUME ["/var/log/nginx"]
 
 # install php
+RUN apt-get update
 RUN apt-get install -y --force-yes php7.2-fpm php7.2-cli php7.2-dev php7.2-pgsql php7.2-sqlite3 php7.2-gd \
     php-apcu php7.2-curl php7.2-imap php7.2-mysql php7.2-readline php-xdebug php-common \
     php7.2-mbstring php7.2-xml php7.2-zip
@@ -96,16 +97,22 @@ VOLUME ["/var/lib/mysql"]
 # install composer
 RUN curl -sS https://getcomposer.org/installer | php && \
     mv composer.phar /usr/local/bin/composer && \
-    printf "\nPATH=\"~/.composer/vendor/bin:\$PATH\"\n" | tee -a ~/.bashrc
+    echo "" >> ~/.bashrc && \
+    echo 'export PATH="$HOME/.composer/vendor/bin:$PATH"' >> ~/.bashrc && \
+    chown www-data:www-data -R /var/www
+
+USER www-data
     
-# install prestissimo
-# RUN composer global require "hirak/prestissimo"
+# clear cache and install prestissimo
+# RUN composer clear-cache && composer global require "hirak/prestissimo"
 
 # install laravel envoy
 RUN composer global require "laravel/envoy"
 
 #install laravel installer
 RUN composer global require "laravel/installer"
+
+USER root
 
 # install nodejs
 RUN apt-get install -y nodejs
@@ -150,6 +157,3 @@ EXPOSE 80 443 3306 6379
 # set container entrypoints
 ENTRYPOINT ["/bin/bash","-c"]
 CMD ["/usr/bin/supervisord"]
-
-# init project and permissions setup
-RUN cd /var/www/html && laravel new app && chown www-data:www-data -R app/
